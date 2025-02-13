@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roulette Betting Table</title>
+   
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            width: 100%;
+            height: 100px;
+            background-color: red;
+            line-height: 100px;
+        }
+
+        ul li {
+            list-style: none;
+            display: inline-block;
+        }
+
+        ul li a {
+            text-decoration: none;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            color: rgb(0, 0, 0);
+            padding: 0 20px;
+            font-size: 20px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: green;
+            padding-top: 50px;
+            color: white;
+        }
+
+        .money-counter {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .roulette-wheel {
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: conic-gradient(
+                red 0% 2.7%, black 2.7% 5.4%, red 5.4% 8.1%, black 8.1% 10.8%, 
+                red 10.8% 13.5%, black 13.5% 16.2%, red 16.2% 18.9%, black 18.9% 21.6%, 
+                red 21.6% 24.3%, black 24.3% 27%, red 27% 29.7%, black 29.7% 32.4%, 
+                red 32.4% 35.1%, black 35.1% 37.8%, red 37.8% 40.5%, black 40.5% 43.2%, 
+                red 43.2% 45.9%, black 45.9% 48.6%, red 48.6% 51.3%, black 51.3% 54%, 
+                red 54% 56.7%, black 56.7% 59.4%, red 59.4% 62.1%, black 62.1% 64.8%, 
+                red 64.8% 67.5%, black 67.5% 70.2%, red 70.2% 72.9%, black 72.9% 75.6%, 
+                red 75.6% 78.3%, black 78.3% 81%, red 81% 83.7%, black 83.7% 86.4%, 
+                red 86.4% 89.1%, black 89.1% 91.8%, red 91.8% 94.5%, black 94.5% 97.2%, 
+                green 97.2% 100% /* This defines the green 0 */
+            );
+            border: 10px solid #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            margin: 20px auto;
+            position: relative;
+            transition: transform 3s ease-out; /* This will control the wheel spin */
+        }
+
+        .ball {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .betting-table {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 2px;
+            width: 700px;
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        .betting-table .cell {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #fff;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .cell.red { background-color: red; }
+        .cell.black { background-color: black; }
+        .cell.green { background-color: green; color: white; font-weight: bold; }
+
+        .color-bet button, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .coin-button {
+            margin: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: yellow;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="Roulette.html">Roulette Wheel</a></li>
+            <li><a href="blackjack.html">Blackjack</a></li>
+            <li><a href="slots.html">Slots</a></li>
+        </ul>
+    </nav>
+
+    <h1>Roulette Betting Table</h1>
+    <div class="money-counter">Money: $<span id="money">1000</span></div>
+
+    <div class="roulette-wheel" id="roulette-wheel">
+        <div class="ball"></div>
+    </div>
+
+    <div class="betting-table">
+        <!-- Betting Table Cells -->
+        <script>
+            const numbers = [
+                0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6,
+                27, 13, 36, 11, 30, 8, 23, 10, 5, 24,
+                16, 33, 1, 20, 14, 31, 9, 22, 18, 29,
+                7, 28, 12, 35, 3, 26
+            ];
+
+            const colors = [
+                "green", "red", "black", "red", "black", "red", "black", "red", "black", "red", "black",
+                "black", "red", "black", "red", "black", "red", "black", "red", "black", "red",
+                "black", "red", "black", "red", "black", "red", "black", "red", "black", "red",
+                "red", "black", "red", "black", "red", "black"
+            ];
+
+            document.write(numbers.map((num, i) =>
+                `<div class="cell ${colors[i]}" data-number="${num}" onclick="placeBet(${num})">${num}</div>`
+            ).join(''));
+        </script>
+    </div>
+
+    <div class="color-bet">
+        <button onclick="placeColorBet('red')">Bet on Red</button>
+        <button onclick="placeColorBet('black')">Bet on Black</button>
+    </div>
+
+    <button onclick="spin()">Spin the Wheel</button>
+    <p id="result">Press the button!</p>
+
+    <button class="coin-button" onclick="earnCoin()">Click to Earn 1 Coin</button>
+
+    <script>
+        let money = localStorage.getItem("money") ? parseInt(localStorage.getItem("money")) : 1000;
+        document.getElementById("money").textContent = money;
+
+        let betNumber = null;
+        let betColor = null;
+        let betAmount = 0;
+
+        function updateMoney(amount) {
+            money += amount;
+            localStorage.setItem("money", money);
+            document.getElementById('money').textContent = money;
+        }
+
+        function placeBet(number) {
+            betAmount = parseInt(prompt("Enter your bet amount:"));
+            if (betAmount > money || isNaN(betAmount) || betAmount <= 0) {
+                alert("Invalid bet amount.");
+                return;
+            }
+            betNumber = number;
+            betColor = null;
+            updateMoney(-betAmount);
+            alert(`Bet $${betAmount} on number ${number}`);
+        }
+
+        function placeColorBet(color) {
+            betAmount = parseInt(prompt("Enter your bet amount:"));
+            if (betAmount > money || isNaN(betAmount) || betAmount <= 0) {
+                alert("Invalid bet amount.");
+                return;
+            }
+            betColor = color;
+            betNumber = null;
+            updateMoney(-betAmount);
+            alert(`Bet $${betAmount} on ${color}`);
+        }
+
+        function spin() {
+            const wheel = document.getElementById("roulette-wheel");
+            const ball = document.querySelector(".ball");
+
+            const randomIndex = Math.floor(Math.random() * numbers.length);
+            const winningNumber = numbers[randomIndex];
+            const winningColor = colors[randomIndex];
+
+            // Apply the spin animation to the wheel
+            const spinAngle = Math.floor(Math.random() * 360 + 720); // Spin more than once
+            wheel.style.transition = "transform 3s ease-out"; // Control wheel speed and transition
+            wheel.style.transform = `rotate(${spinAngle}deg)`; // Rotate wheel
+
+            // Ball animation
+            setTimeout(() => {
+                ball.style.transition = "transform 3s ease-out";
+                ball.style.transform = `translate(-50%, -50%) rotate(${spinAngle}deg) translate(260px)`;
+            }, 100);
+
+            document.getElementById("result").textContent = `Winning: ${winningColor.toUpperCase()} ${winningNumber}`;
+
+            if (betNumber === winningNumber) {
+                updateMoney(betAmount * 10);
+                alert(`You won! Number ${winningNumber}`);
+            } else if (betColor === winningColor) {
+                updateMoney(betAmount * 2);
+                alert(`You won! Color ${winningColor}`);
+            } else {
+                alert(`You lost! Number ${winningNumber}`);
+            }
+
+            // Reset the bets
+            betNumber = betColor = null;
+            betAmount = 0;
+        }
+
+        function earnCoin() {
+            updateMoney(1);
+            alert("You earned 1 coin!");
+        }
+    </script>
+</body>
+</html>

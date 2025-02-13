@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: green;
+            color: white;
+        }
+        nav {
+            width: 100%;
+            height: 100px;
+            background-color: red;
+            line-height: 100px;
+        }
+        ul {
+            padding: 0;
+        }
+        ul li {
+            list-style: none;
+            display: inline-block;
+        }
+        ul li a {
+            text-decoration: none;
+            font-family: Arial, sans-serif;
+            color: white;
+            padding: 0 20px;
+            font-size: 20px;
+        }
+        .game-area {
+            margin-top: 20px;
+        }
+        .hand {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .card {
+            width: 80px;
+            height: 120px;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .money-counter {
+            font-size: 20px;
+            margin: 10px;
+        }
+        .card-description {
+            margin-top: 5px;
+            color: yellow;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <ul>
+            <li><a href="Roulette.html">Roulette</a></li>
+            <li><a href="blackjack.html">Blackjack</a></li>
+            <li><a href="slots.html">Slots</a></li>
+        </ul>
+    </nav>
+
+    <h1>Blackjack</h1>
+    <p class="money-counter">Money: $<span id="money"></span></p>
+    <p id="message">Press "Deal" to start the game!</p>
+
+    <div class="game-area">
+        <h2>Dealer's Hand</h2>
+        <div id="dealer-hand" class="hand"></div>
+
+        <h2>Your Hand</h2>
+        <div id="player-hand" class="hand"></div>
+    </div>
+
+    <div class="controls">
+        <input type="number" id="betAmount" placeholder="Enter bet amount">
+        <button onclick="dealCards()">Deal</button>
+        <button onclick="hit()" id="hit-btn" disabled>Hit</button>
+        <button onclick="stand()" id="stand-btn" disabled>Stand</button>
+    </div>
+
+    <script>
+        let money = localStorage.getItem("money") ? parseInt(localStorage.getItem("money")) : 1000;
+        document.getElementById("money").textContent = money;
+
+        const suits = ["hearts", "diamonds", "clubs", "spades"];
+        const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+        
+        let deck, playerHand, dealerHand, gameOver, bet;
+
+        function getDeck() {
+            let deck = [];
+            for (let suit of suits) {
+                for (let value of values) {
+                    deck.push({ suit, value });
+                }
+            }
+            return deck.sort(() => Math.random() - 0.5);
+        }
+
+        function getCardImage(card) {
+            const imageUrl = `cards/${card.value}_of_${card.suit}.png`;
+            
+            // Überprüfen, ob das Bild existiert. Falls nicht, gibt es einen Standardtext zurück.
+            const img = new Image();
+            img.src = imageUrl;
+            return new Promise((resolve, reject) => {
+                img.onload = () => resolve(imageUrl);
+                img.onerror = () => reject(card.value + " of " + card.suit); // Rückgabe als Text, wenn das Bild nicht gefunden wird
+            });
+        }
+
+        function calculateScore(hand) {
+            let score = 0, aceCount = 0;
+
+            hand.forEach(card => {
+                if (card.value === "A") {
+                    aceCount++;
+                    score += 11;
+                } else if (["J", "Q", "K"].includes(card.value)) {
+                    score += 10;
+                } else {
+                    score += parseInt(card.value);
+                }
+            });
+
+            while (score > 21 && aceCount > 0) {
+                score -= 10;
+                aceCount--;
+            }
+
+            return score;
+        }
+
+        function updateUI() {
+            document.getElementById("player-hand").innerHTML = "";
+            document.getElementById("dealer-hand").innerHTML = "";
+
+            // Player Hand
+            playerHand.forEach(card => {
+                let img = document.createElement("img");
+                getCardImage(card)
+                    .then(imageUrl => {
+                        img.src = imageUrl;
+                        img.className = "card";
+                        document.getElementById("player-hand").appendChild(img);
+                    })
+                    .catch(cardDescription => {
+                        let description = document.createElement("p");
+                        description.className = "card-description";
+                        description.textContent = cardDescription; // Zeige Text an, wenn das Bild nicht verfügbar ist
+                        document.getElementById("player-hand").appendChild(description);
+                    });
+
+                let description = document.createElement("p");
+                description.className = "card-description";
+                description.textContent = `${card.suit.charAt(0).toUpperCase() + card.suit.slice(1)} ${card.value}`;
+                document.getElementById("player-hand").appendChild(description);
+            });
+
+            // Dealer Hand
+            dealerHand.forEach((card, index) => {
+                let img = document.createElement("img");
+                getCardImage(card)
+                    .then(imageUrl => {
+                        img.src = (index === 0 && !gameOver) ? "cards/back.png" : imageUrl;
+                        img.className = "card";
+                        document.getElementById("dealer-hand").appendChild(img);
+                    })
+                    .catch(cardDescription => {
+                        let description = document.createElement("p");
+                        description.className = "card-description";
+                        description.textContent = cardDescription; // Zeige Text an, wenn das Bild nicht verfügbar ist
+                        document.getElementById("dealer-hand").appendChild(description);
+                    });
+
+                if (index === 0 && !gameOver) return;
+
+                let description = document.createElement("p");
+                description.className = "card-description";
+                description.textContent = `${card.suit.charAt(0).toUpperCase() + card.suit.slice(1)} ${card.value}`;
+                document.getElementById("dealer-hand").appendChild(description);
+            });
+
+            document.getElementById("money").textContent = money;
+            document.getElementById("message").innerText = gameOver ? getResultMessage() : "Hit or Stand?";
+        }
+
+        function dealCards() {
+            bet = parseInt(document.getElementById("betAmount").value);
+            if (isNaN(bet) || bet <= 0 || bet > money) {
+                alert("Invalid bet amount");
+                return;
+            }
+
+            money -= bet;
+            localStorage.setItem("money", money);
+
+            deck = getDeck();
+            playerHand = [deck.pop(), deck.pop()];
+            dealerHand = [deck.pop(), deck.pop()];
+            gameOver = false;
+
+            document.getElementById("hit-btn").disabled = false;
+            document.getElementById("stand-btn").disabled = false;
+
+            updateUI();
+        }
+
+        function hit() {
+            if (gameOver) return;
+
+            playerHand.push(deck.pop());
+            if (calculateScore(playerHand) > 21) {
+                gameOver = true;
+            }
+
+            updateUI();
+        }
+
+        function stand() {
+            if (gameOver) return;
+
+            while (calculateScore(dealerHand) < 17) {
+                dealerHand.push(deck.pop());
+            }
+
+            gameOver = true;
+            updateUI();
+        }
+
+        function getResultMessage() {
+            const playerScore = calculateScore(playerHand);
+            const dealerScore = calculateScore(dealerHand);
+
+            if (playerScore > 21) return "Busted! Dealer Wins.";
+            if (dealerScore > 21 || playerScore > dealerScore) {
+                money += bet * 2;
+                localStorage.setItem("money", money);
+                return "You Win!";
+            }
+            if (dealerScore === playerScore) {
+                money += bet;
+                localStorage.setItem("money", money);
+                return "It's a Tie!";
+            }
+            return "Dealer Wins!";
+        }
+    </script>
+</body>
+</html>
